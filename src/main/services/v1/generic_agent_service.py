@@ -1,8 +1,8 @@
 from typing import Optional, Dict, Any
-import os
 from datetime import datetime, timezone
 from src.main.utils.langgraph_utils import call_llm_with_config
 from src.main.config.logger import get_logger
+from src.main.config.config_loader import config_override
 from src.main.exceptions.common_exception import CustomException
 import traceback
 
@@ -54,10 +54,8 @@ async def call_generic_agent(
                 status_code=400
             )
 
-        original_api_key = os.environ.get('GOOGLE_API_KEY')
-        os.environ['GOOGLE_API_KEY'] = api_key
-
-        try:
+        # Use config override to temporarily set the API key
+        with config_override('google', 'api_key', value=api_key):
             # Prepare trace metadata
             if trace_metadata is None:
                 trace_metadata = {}
@@ -80,11 +78,6 @@ async def call_generic_agent(
 
             return response
 
-        finally:
-            if original_api_key is not None:
-                os.environ['GOOGLE_API_KEY'] = original_api_key
-            elif 'GOOGLE_API_KEY' in os.environ:
-                del os.environ['GOOGLE_API_KEY']
 
     except CustomException:
         raise

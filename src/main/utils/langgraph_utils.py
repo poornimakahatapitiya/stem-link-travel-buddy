@@ -1,7 +1,6 @@
 from langchain_google_vertexai import ChatVertexAI
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage
-import os
 import traceback
 from datetime import datetime, timezone
 from src.main.constants import DefaultLLMConfig
@@ -12,6 +11,11 @@ from typing import Optional, Dict, Any
 
 logger = get_logger(__name__)
 
+
+def get_config_value(*keys, default=None):
+    """Lazy import to avoid circular dependency"""
+    from src.main.config.config_loader import get_config_value as _get_config_value
+    return _get_config_value(*keys, default=default)
 
 def initialize_google_genai_llm(
     model_name: str = DefaultLLMConfig.LLM_MODEL_NAME,
@@ -25,10 +29,10 @@ def initialize_google_genai_llm(
 
     try:
         if api_key is None:
-            api_key = os.getenv("GOOGLE_API_KEY")
+            api_key = get_config_value('google', 'api_key')
             if not api_key:
                 logger.error(
-                    "API key not provided and GOOGLE_API_KEY env var not set",
+                    "API key not provided and not set in config.json",
                     extra={
                         'user': 'system',
                         'action': 'initialize_google_genai_llm',
@@ -37,7 +41,7 @@ def initialize_google_genai_llm(
                     }
                 )
                 raise CustomException(
-                    detail="api_key must be provided or GOOGLE_API_KEY environment variable must be set",
+                    detail="api_key must be provided or set in config.json under google.api_key",
                     status_code=400
                 )
 
@@ -87,10 +91,10 @@ def initialize_vertex_ai_llm(
 
     try:
         if project_id is None:
-            project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+            project_id = get_config_value('google', 'cloud_project')
             if not project_id:
                 logger.error(
-                    "Project ID not provided and GOOGLE_CLOUD_PROJECT env var not set",
+                    "Project ID not provided and not set in config.json",
                     extra={
                         'user': 'system',
                         'action': 'initialize_vertex_ai_llm',
@@ -99,7 +103,7 @@ def initialize_vertex_ai_llm(
                     }
                 )
                 raise CustomException(
-                    detail="project_id must be provided or GOOGLE_CLOUD_PROJECT environment variable must be set",
+                    detail="project_id must be provided or set in config.json under google.cloud_project",
                     status_code=400
                 )
 
@@ -287,7 +291,7 @@ async def call_llm_with_config(
         top_p = llm_model_config.get("top_p", DefaultLLMConfig.LLM_TOP_P)
         max_output_tokens = llm_model_config.get("max_output_tokens", DefaultLLMConfig.LLM_MAX_TOKENS)
 
-        api_key = os.environ.get('GOOGLE_API_KEY')
+        api_key = get_config_value('google', 'api_key')
         use_genai = api_key is not None and api_key.strip() != ""
 
         langfuse_handler = LangfuseConfig.get_callback_handler()

@@ -1,8 +1,13 @@
-import os
 from typing import Optional
 from langfuse import Langfuse
 from langfuse.callback import CallbackHandler
-from src.main.config.logger import get_logger
+from src.main.config.config_loader import get_config_value
+
+
+def get_logger(name):
+    from src.main.config.logger import get_logger as _get_logger
+    return _get_logger(name)
+
 
 logger = get_logger(__name__)
 
@@ -24,14 +29,14 @@ class LangfuseConfig:
             cls._enabled = False
             return
 
-        public_key = public_key or os.getenv("LANGFUSE_PUBLIC_KEY")
-        secret_key = secret_key or os.getenv("LANGFUSE_SECRET_KEY")
-        host = host or os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
+        public_key = public_key or get_config_value('langfuse', 'public_key')
+        secret_key = secret_key or get_config_value('langfuse', 'secret_key')
+        host = host or get_config_value('langfuse', 'host', default='https://cloud.langfuse.com')
 
         if not public_key or not secret_key:
             logger.warning(
                 "Langfuse credentials not found. Tracing will be disabled. "
-                "Set LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY environment variables."
+                "Set public_key and secret_key in config.json under langfuse section."
             )
             cls._enabled = False
             return
@@ -91,7 +96,7 @@ class LangfuseConfig:
 
 
 def init_langfuse():
-    enabled = os.getenv("LANGFUSE_ENABLED", "true").lower() in ("true", "1", "yes")
+    enabled = get_config_value('langfuse', 'enabled', default=True)
     LangfuseConfig.initialize(enabled=enabled)
 
 

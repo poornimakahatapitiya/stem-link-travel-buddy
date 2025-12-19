@@ -10,7 +10,7 @@ app = FastAPI(
 
 
 
-app.include_router(generic_agent_router)
+app.include_router(prefix="/v1",router=generic_agent_router)
 
 
 @app.get("/health")

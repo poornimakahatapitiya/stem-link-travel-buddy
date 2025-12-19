@@ -8,6 +8,12 @@ from typing import Optional, Dict, Any
 from logging.handlers import RotatingFileHandler
 
 
+def get_config_value(*keys, default=None):
+    """Lazy import to avoid circular dependency"""
+    from src.main.config.config_loader import get_config_value as _get_config_value
+    return _get_config_value(*keys, default=default)
+
+
 class OWASPFormatter(logging.Formatter):
 
     def __init__(self, fmt=None, datefmt=None):
@@ -49,14 +55,27 @@ class LoggerConfig:
     )
     DEFAULT_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
-    # File logging configuration
-    LOG_DIR = os.getenv('LOG_DIR', 'logs')
-    LOG_FILE = os.getenv('LOG_FILE', 'travelbuddy.log')
-    MAX_BYTES = int(os.getenv('LOG_MAX_BYTES', 10 * 1024 * 1024))  # 10MB
-    BACKUP_COUNT = int(os.getenv('LOG_BACKUP_COUNT', 5))
+    # File logging configuration - use None and lazy load to avoid circular import at module level
+    LOG_DIR = None
+    LOG_FILE = None
+    MAX_BYTES = None
+    BACKUP_COUNT = None
 
     _loggers: Dict[str, logging.Logger] = {}
     _configured = False
+
+    @classmethod
+    def _init_config_values(cls):
+        """Initialize config values from config.json if not already set"""
+        if cls.LOG_DIR is None:
+            cls.LOG_DIR = get_config_value('logging', 'dir', default='logs')
+        if cls.LOG_FILE is None:
+            cls.LOG_FILE = get_config_value('logging', 'file', default='travelbuddy.log')
+        if cls.MAX_BYTES is None:
+            cls.MAX_BYTES = get_config_value('logging', 'max_bytes', default=10 * 1024 * 1024)
+        if cls.BACKUP_COUNT is None:
+            cls.BACKUP_COUNT = get_config_value('logging', 'backup_count', default=5)
+
 
     @classmethod
     def setup(
@@ -71,9 +90,12 @@ class LoggerConfig:
         if cls._configured:
             return
 
-        # Determine log level from environment or parameter
+        # Initialize config values from config.json
+        cls._init_config_values()
+
+        # Determine log level from config or parameter
         if log_level is None:
-            log_level_str = os.getenv('LOG_LEVEL', 'INFO').upper()
+            log_level_str = get_config_value('logging', 'level', default='INFO').upper()
             log_level = getattr(logging, log_level_str, cls.DEFAULT_LOG_LEVEL)
 
         # Update class variables if provided
@@ -106,7 +128,7 @@ class LoggerConfig:
         logger = logging.getLogger(name)
 
         if log_level is None:
-            log_level_str = os.getenv('LOG_LEVEL', 'INFO').upper()
+            log_level_str = get_config_value('logging', 'level', default='INFO').upper()
             log_level = getattr(logging, log_level_str, cls.DEFAULT_LOG_LEVEL)
 
         logger.setLevel(log_level)
