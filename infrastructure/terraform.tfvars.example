@@ -1,0 +1,47 @@
+# Example Terraform Variables File
+# Copy this file to terraform.tfvars and update with your values
+
+# AWS Configuration
+aws_region   = "us-east-1"
+project_name = "travel-buddy"
+environment  = "dev"
+
+# VPC Configuration
+vpc_cidr             = "10.0.0.0/16"
+public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnet_cidrs = ["10.0.11.0/24", "10.0.12.0/24"]
+
+# ECS Configuration
+container_name = "travel-buddy-app"
+container_port = 8000
+app_count      = 2
+fargate_cpu    = 1024
+fargate_memory = 2048
+
+# Health Check Configuration
+health_check_path                = "/health"
+health_check_interval            = 30
+health_check_timeout             = 5
+health_check_healthy_threshold   = 2
+health_check_unhealthy_threshold = 3
+
+# Auto Scaling Configuration
+autoscaling_min_capacity = 1
+autoscaling_max_capacity = 4
+autoscaling_target_cpu   = 70
+autoscaling_target_memory = 80
+
+# ECR Configuration
+ecr_image_tag           = "latest"
+ecr_image_tag_mutability = "MUTABLE"
+ecr_scan_on_push        = true
+
+# Logging Configuration
+log_retention_days = 30
+
+# Certificate Configuration (Optional - for HTTPS)
+# certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/12345678-1234-1234-1234-123456789012"
+
+# Security Configuration
+allowed_cidr_blocks = ["0.0.0.0/0"]
+
