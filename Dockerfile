@@ -27,6 +27,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy application code
 COPY . .
 
+# Verify config.json exists (will fail build if missing)
+RUN test -f /app/src/config.json || (echo "ERROR: config.json not found at /app/src/config.json" && exit 1)
+
 
 # Expose port
 EXPOSE 8000

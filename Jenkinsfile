@@ -41,17 +41,32 @@ pipeline {
     }
 
     stage('Fetch config.json from SSM') {
-      steps {
-        sh """
-          mkdir -p ./src/main
-          aws ssm get-parameter \
-            --name "${params.SSM_PARAM_NAME}" \
-            --with-decryption \
-            --query "Parameter.Value" \
-            --output text > ./src/main/config.json
-        """
-      }
-    }
+  steps {
+    sh """
+      mkdir -p ./src
+      aws ssm get-parameter \
+        --name "${params.SSM_PARAM_NAME}" \
+        --with-decryption \
+        --query "Parameter.Value" \
+        --output text > ./src/config.json
+
+      # Verify config.json was created and has content
+      if [ ! -f ./src/config.json ]; then
+        echo "ERROR: config.json was not created"
+        exit 1
+      fi
+
+      if [ ! -s ./src/config.json ]; then
+        echo "ERROR: config.json is empty"
+        exit 1
+      fi
+
+      echo "✓ config.json successfully fetched from SSM"
+      ls -lh ./src/config.json
+    """
+  }
+}
+
 
     stage('ECR Login') {
       steps {
@@ -75,7 +90,19 @@ pipeline {
       steps {
         sh """
           set -e
+
+          # Verify config.json exists before building
+          echo "Verifying config.json before Docker build..."
+          ls -lh ./src/config.json
+
+          # Build image
           docker build -t ${params.ECR_REPO}:${params.IMAGE_TAG} .
+
+          # Verify config.json is in the image
+          echo "Verifying config.json is in the Docker image..."
+          docker run --rm ${params.ECR_REPO}:${params.IMAGE_TAG} test -f /app/src/config.json && echo "✓ config.json found in image" || (echo "ERROR: config.json not found in image" && exit 1)
+
+          # Tag and push
           docker tag ${params.ECR_REPO}:${params.IMAGE_TAG} ${env.ECR_URI}:${params.IMAGE_TAG}
           docker push ${env.ECR_URI}:${params.IMAGE_TAG}
         """
