@@ -9,10 +9,10 @@ pipeline {
   parameters {
     string(name: 'BRANCH', defaultValue: 'main', description: 'Git branch to build')
     string(name: 'AWS_REGION', defaultValue: 'us-east-1', description: 'AWS region')
-    string(name: 'SSM_PARAM_NAME', defaultValue: '/my-app/config', description: 'SSM parameter name containing config.json')
-    string(name: 'ECR_REPO', defaultValue: 'my-app', description: 'ECR repository name (without env suffix)')
-    string(name: 'ECS_CLUSTER', defaultValue: 'my-cluster', description: 'ECS cluster name')
-    string(name: 'ECS_SERVICE', defaultValue: 'my-service', description: 'ECS service name')
+    string(name: 'SSM_PARAM_NAME', defaultValue: '/stemlink/travel-buddy/dev/config', description: 'SSM parameter name containing config.json')
+    string(name: 'ECR_REPO', defaultValue: 'travel-buddy-dev', description: 'ECR repository name (without env suffix)')
+    string(name: 'ECS_CLUSTER', defaultValue: 'stemlink-cluster-dev', description: 'ECS cluster name')
+    string(name: 'ECS_SERVICE', defaultValue: 'StemLink-Travel-buddy-dev-service-oc4vwxsu', description: 'ECS service name')
     string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Image tag to push (e.g., latest)')
   }
 
@@ -27,7 +27,7 @@ pipeline {
           $class: 'GitSCM',
           branches: [[name: "*/${params.BRANCH}"]],
           userRemoteConfigs: [[
-            url: 'https://github.com/<ORG>/<REPO>.git'
+            url: 'https://github.com/poornimakahatapitiya/stem-link-travel-buddy.git'
             // If private repo: add credentialsId: 'github-creds'
           ]]
         ])
